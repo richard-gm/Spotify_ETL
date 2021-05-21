@@ -4,21 +4,44 @@ import pandas as pd
 from sqlalchemy.orm import sessionmaker
 import requests
 import json
-from datetime import datetime
 import datetime
 import sqlite3
 from dotenv import load_dotenv, find_dotenv
-
 load_dotenv(find_dotenv())
 
+# Get your Token here: https://developer.spotify.com/console/get-recently-played/
 TOKEN = os.environ.get("OAuthToken")  # auth token from .env file
+USER_ID = os.environ.get("USER_ID")  # No need for this data
 
 DATABASE_LOCATION = 'sqlite:///my_played_tracks.sqlite'
-USER_ID = '11144361045'
 
-# print(TOKEN)
 
-# Press the green button in the gutter to run the script.
+def is_data_valid(df: pd.DataFrame) -> bool:
+    # True or false
+    if df.empty:
+        print("There is no data in your df - Check if you have played a song recently in your Spotify Account")
+        return False
+    if pd.Series(df['played_at']).is_unique:
+        pass
+    else:
+        raise Exception("Primary key is not unique")
+
+    # Null values check
+    if df.isnull().values.any():
+        raise Exception("Null value found, please check the dataframe")
+
+    # TimeStrap date must be from yesterday's date
+    # yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+    # yesterday = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+    #
+    # timestamps = df["timestamp"].tolist()
+    # for timestamp in timestamps:
+    #     if datetime.datetime.strptime(timestamp, '%Y-%m-%d') != yesterday:
+    #         raise Exception("At least one of the returned songs does not have a yesterday's timestamp")
+
+    return True
+
+
 if __name__ == '__main__':
     context = {
         "Accept": "application/json",
@@ -26,8 +49,8 @@ if __name__ == '__main__':
         "Authorization": "Bearer {token}".format(token=TOKEN)
     }
     today = datetime.datetime.now()
-    yesterday = today - datetime.timedelta(days=-1)  # Getting data yesterdays value
-    yesterday_unix_timestamp = int(yesterday.timestamp()) * 100
+    yesterday = today - datetime.timedelta(days=1)  # Getting data yesterdays value
+    yesterday_unix_timestamp = int(yesterday.timestamp()) * 1000
 
     r = requests.get(
         "https://api.spotify.com/v1/me/player/recently-played?after={time}".format(time=yesterday_unix_timestamp),
@@ -53,7 +76,12 @@ if __name__ == '__main__':
         }
 
         df_songs = pd.DataFrame(song_dic, columns=['song_name', 'artist_name', 'played_at', 'timestamp'])
-        print(df_songs)
+
+        if is_data_valid(df_songs):
+            print("Data Valid - Load stage")
+        else:
+            print("Data was not valid, please debug")
     else:
         print(r.status_code)
-        print("Error - Please check that your Token is valid")
+        raise Exception('Error - Please check that your Token is valid')
+
