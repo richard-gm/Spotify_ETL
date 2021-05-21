@@ -103,7 +103,7 @@ if __name__ == '__main__':
             print("Opened database successfully")
 
             try:
-                df_songs.to_sql("my_played_tracks", engine, index=False, if_exists='append')
+                df_songs.to_sql("my_played_tracks", engine, index=False, if_exists='append')  # Appending data to the end if data already exist
             except:
                 print("Data already exists in the database")
 
