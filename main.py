@@ -1,6 +1,9 @@
 import os
 import sqlalchemy
 import pandas as pd
+import streamlit as st
+import matplotlib.pyplot as plt
+import numpy as np
 from sqlalchemy.orm import sessionmaker
 import requests
 import json
@@ -8,6 +11,8 @@ import datetime
 import sqlite3
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
+
+
 
 # Get your Token here: https://developer.spotify.com/console/get-recently-played/
 TOKEN = os.environ.get("OAuthToken")  # auth token from .env file
@@ -56,6 +61,10 @@ if __name__ == '__main__':
         "https://api.spotify.com/v1/me/player/recently-played?after={time}".format(time=yesterday_unix_timestamp),
         headers=context)
     data = r.json()
+    # Adding error handler
+    if r.status_code == 403:
+        print(data)
+        print("You're using the wrong endpoint, check that is <Get Current User's Playlists>")
     if r.status_code != 401:
         song_name = []
         artist_name = []
