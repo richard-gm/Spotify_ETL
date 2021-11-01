@@ -1,8 +1,6 @@
 import os
 import sqlalchemy
 import pandas as pd
-import streamlit as st
-import matplotlib.pyplot as plt
 import numpy as np
 from sqlalchemy.orm import sessionmaker
 import requests
@@ -10,9 +8,8 @@ import json
 import datetime
 import sqlite3
 from dotenv import load_dotenv, find_dotenv
+
 load_dotenv(find_dotenv())
-
-
 
 # Get your Token here: https://developer.spotify.com/console/get-recently-played/
 TOKEN = os.environ.get("OAuthToken")  # auth token from .env file
@@ -47,6 +44,14 @@ def is_data_valid(df: pd.DataFrame) -> bool:
     return True
 
 
+# Converting img to Binary
+def convertToBinaryData(filename):
+    # Convert digital data to binary format
+    with open(filename, 'rb') as file:
+        blobData = file.read()
+    return blobData
+
+
 if __name__ == '__main__':
     context = {
         "Accept": "application/json",
@@ -68,12 +73,14 @@ if __name__ == '__main__':
     if r.status_code != 401:
         song_name = []
         artist_name = []
+        song_image = []
         played_at_list = []
         day = []
         time = []
 
         for item in data['items']:
             song_name.append(item["track"]["name"])
+            song_image.append(item["track"]["album"]["images"][1]["url"])
             artist_name.append(item["track"]["album"]["artists"][0]["name"])
             played_at_list.append(item["played_at"])
             day.append(item["played_at"][0:10])
@@ -85,9 +92,10 @@ if __name__ == '__main__':
             "played_at": played_at_list,
             "day": day,
             "time": time,
+            "song_image": song_image,
         }
 
-        df_songs = pd.DataFrame(song_dic, columns=['song_name', 'artist_name', 'played_at', 'day', 'time'])
+        df_songs = pd.DataFrame(song_dic, columns=['song_name', 'artist_name', 'played_at', 'day', 'time', 'song_image'])
 
         # Validate date
         if is_data_valid(df_songs):
@@ -104,7 +112,8 @@ if __name__ == '__main__':
             artist_name VARCHAR(200),
             played_at VARCHAR(200),
             day VARCHAR(200),
-            time VARCHAR(200),            
+            time VARCHAR(200),
+            song_image VARCHAR (200),         
             CONSTRAINT primary_key_constraint PRIMARY KEY (played_at)
             )
             """
@@ -113,6 +122,7 @@ if __name__ == '__main__':
 
             try:
                 df_songs.to_sql("my_played_tracks", engine, index=False, if_exists='append')  # Appending data to the end if data already exist
+                print("---- NEW data added to db ----")
             except:
                 print("Data already exists in the database")
 
@@ -125,4 +135,3 @@ if __name__ == '__main__':
     else:
         print(r.status_code)
         raise Exception('Error - Please check that your Token is valid')
-
