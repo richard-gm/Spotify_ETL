@@ -1,6 +1,7 @@
 # Spotify ETL
 
-The aim of this project is to create a date-pipeline to ETL data from the spotify's API
+The aim of this project is to create a date-pipeline (ETL data) from the spotify's API to a SQLite db 
+The script has to be executed manually but feel free to host it and make it run every day to get more data
 
 Get your Spotify API token here: https://developer.spotify.com/console/get-recently-played/
 
